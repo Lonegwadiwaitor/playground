@@ -22,6 +22,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout emsdk
+        uses: actions/checkout@v4
+        with:
+          repository: emscripten-core/emsdk
+          path: emsdk
+
+      - name: Install Emscripten
+        run: |
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+
+      - name: Clone Luau
+        run: |
+          if [ ! -d "wasm/luau" ]; then
+            git clone --depth 1 https://github.com/Roblox/luau.git wasm/luau
+          fi
+
+      - name: Build WASM
+        run: |
+          source emsdk/emsdk_env.sh
+          cd wasm
+          ./build.sh release
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,8 +56,6 @@ jobs:
         run: npm ci
 
       - name: Build
-        # Run vite build directly to skip prebuild WASM compilation
-        # Pre-built WASM files are already in public/wasm
         run: npx vite build
 
       - name: Setup Pages
