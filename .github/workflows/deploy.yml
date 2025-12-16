@@ -34,9 +34,11 @@ jobs:
           path: |
             emsdk
             wasm/build
-          key: cache-${{ runner.os }}-${{ hashFiles('wasm/**/*') }}
+            wasm/luau
+          key: build-${{ runner.os }}-${{ hashFiles('wasm/src/**', 'wasm/CMakeLists.txt', 'wasm/build.sh') }}-luau-${{ github.run_id }}
           restore-keys: |
-            cache-${{ runner.os }}-
+            build-${{ runner.os }}-${{ hashFiles('wasm/src/**', 'wasm/CMakeLists.txt', 'wasm/build.sh') }}-luau-
+            build-${{ runner.os }}-
 
       - name: Install Emscripten
         run: |
@@ -44,33 +46,21 @@ jobs:
           ./emsdk install latest
           ./emsdk activate latest
 
-      - name: Clone Luau
+      - name: Clone or update Luau
         run: |
           if [ ! -d "wasm/luau" ]; then
             git clone --depth 1 https://github.com/Roblox/luau.git wasm/luau
+          else
+            cd wasm/luau
+            git fetch origin
+            git reset --hard origin/master
           fi
-
-      - name: Update Luau to latest
-        run: |
-          cd wasm/luau
-          git fetch origin
-          git checkout origin/master
-          git pull origin master
 
       - name: Build WASM
         run: |
           source emsdk/emsdk_env.sh
           cd wasm
           ./build.sh release
-
-      - name: Save build cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            emsdk
-            wasm/build
-          key: cache-${{ runner.os }}-${{ hashFiles('wasm/**/*') }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
