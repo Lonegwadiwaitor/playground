@@ -257,27 +257,45 @@ function createLuauHover() {
           const dom = document.createElement('div');
           dom.className = 'cm-luau-hover';
           dom.style.cssText = `
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 8px 12px;
-            max-width: 400px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            max-width: 450px;
             font-size: 13px;
             font-family: var(--font-mono);
-            line-height: 1.4;
-            white-space: pre-wrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            line-height: 1.5;
+            overflow: hidden;
           `;
           
           // Parse markdown code blocks
           const codeBlockMatch = content.match(/```luau\n([\s\S]*?)\n```/);
           if (codeBlockMatch) {
+            // Type info section
+            const codeWrapper = document.createElement('div');
+            codeWrapper.style.cssText = `
+              padding: 10px 14px;
+              background: var(--bg-tertiary);
+              border-left: 3px solid var(--accent);
+            `;
             const code = document.createElement('code');
             code.textContent = codeBlockMatch[1];
-            code.style.color = 'var(--text-primary)';
-            dom.appendChild(code);
+            code.style.cssText = `
+              color: var(--text-primary);
+              white-space: pre-wrap;
+            `;
+            codeWrapper.appendChild(code);
+            dom.appendChild(codeWrapper);
           } else {
-            dom.textContent = content;
+            const textWrapper = document.createElement('div');
+            textWrapper.style.cssText = `
+              padding: 10px 14px;
+              background: var(--bg-tertiary);
+              border-left: 3px solid var(--accent);
+              color: var(--text-primary);
+              white-space: pre-wrap;
+            `;
+            textWrapper.textContent = content;
+            dom.appendChild(textWrapper);
           }
           
           return { dom };

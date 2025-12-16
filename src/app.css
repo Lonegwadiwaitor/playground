@@ -128,3 +128,30 @@ body {
 .ghost-btn:active::before {
   opacity: 0.15;
 }
+
+/* CodeMirror lint gutter - custom minimal markers using SVG */
+.cm-gutterElement .cm-lint-marker,
+.cm-lint-marker {
+  width: 8px;
+  height: 8px;
+  margin: 4px;
+  border-radius: 50%;
+}
+
+.cm-gutterElement .cm-lint-marker-error,
+.cm-lint-marker-error {
+  background: var(--color-error-500);
+  content: '';
+}
+
+.cm-gutterElement .cm-lint-marker-warning,
+.cm-lint-marker-warning {
+  background: var(--color-warning-500);
+  content: '';
+}
+
+.cm-gutterElement .cm-lint-marker-info,
+.cm-lint-marker-info {
+  background: var(--color-accent-500);
+  content: '';
+}
