@@ -1,7 +1,7 @@
 /**
  * Luau WASM Module Loader and Runner
  * 
- * Loads the ES6 WASM module via dynamic import with full URL.
+ * Loads the bundled Luau WASM module.
  */
 
 import { appendOutput, clearOutput, setRunning, setExecutionTime, getActiveFileContent, activeFile, getAllFiles } from '$lib/stores/playground';
@@ -17,6 +17,7 @@ import type {
   LuauCompletion,
   CreateLuauModule
 } from './types';
+import createLuauModule from './luau-module.js';
 
 let wasmModule: LuauWasmModule | null = null;
 let modulePromise: Promise<LuauWasmModule> | null = null;
@@ -36,21 +37,12 @@ export async function loadLuauWasm(): Promise<LuauWasmModule> {
 
   modulePromise = (async (): Promise<LuauWasmModule> => {
     try {
-      // Build the full URL for the ES module
-      // This is required because files in /public can't be imported directly in Vite
+      // Build the base URL for WASM file resolution
       // Use document.baseURI to handle both root and subdirectory deployments
       const baseUrl = new URL('./', document.baseURI).href.replace(/\/$/, '');
-      const moduleUrl = `${baseUrl}/wasm/luau.js`;
       
-      // Dynamic import of ES module
-      const mod = await import(/* @vite-ignore */ moduleUrl);
-      const createModule: CreateLuauModule = mod.default || mod.createLuauModule;
-      
-      if (typeof createModule !== 'function') {
-        throw new Error('createLuauModule function not found in module');
-      }
-
-      const module = await createModule({
+      // Create the module using the bundled factory function
+      const module = await (createLuauModule as CreateLuauModule)({
         locateFile: (path: string) => {
           if (path.endsWith('.wasm')) {
             return `${baseUrl}/wasm/luau.wasm`;

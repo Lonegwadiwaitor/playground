@@ -42,19 +42,22 @@ emcmake cmake .. \
 echo "Building..."
 emmake make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
-# Copy output to static/wasm directory
+# Copy WASM to public/wasm directory (served at runtime)
 OUTPUT_DIR="$SCRIPT_DIR/../public/wasm"
 mkdir -p "$OUTPUT_DIR"
 
 echo "Copying output files..."
-cp luau.js "$OUTPUT_DIR/"
 if [ -f luau.wasm ]; then
     cp luau.wasm "$OUTPUT_DIR/"
 fi
 
+# Copy JS module to src for bundling (with Vite ignore comment to suppress URL warning)
+SRC_OUTPUT="$SCRIPT_DIR/../src/lib/luau/luau-module.js"
+sed 's/(new URL("luau.wasm",import.meta.url))/(new URL(\/* @vite-ignore *\/ "luau.wasm",import.meta.url))/g' luau.js > "$SRC_OUTPUT"
+
 echo ""
 echo "Build complete!"
 echo "Output files:"
-echo "  - $OUTPUT_DIR/luau.js"
 [ -f "$OUTPUT_DIR/luau.wasm" ] && echo "  - $OUTPUT_DIR/luau.wasm"
+echo "  - $SRC_OUTPUT (bundled)"
 

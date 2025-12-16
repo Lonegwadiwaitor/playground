@@ -7,6 +7,8 @@
     <link rel="icon" href="/favicon.svg" />
     <title>Luau Playground</title>
     <link rel="preload" href="/font/BuilderMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/wasm/luau.wasm" as="fetch" type="application/wasm" crossorigin />
+    <link rel="preload" href="/wasm/onig.wasm" as="fetch" type="application/wasm" crossorigin />
     <script>
       // Prevent theme flash - must run synchronously before CSS
       (function() {
