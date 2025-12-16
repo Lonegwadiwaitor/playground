@@ -69,6 +69,11 @@ export interface LuauWasmModule {
   // Utility
   ccall(name: 'luau_version', returnType: 'string', argTypes: [], args: []): string;
   
+  // Configuration
+  ccall(name: 'luau_set_mode', returnType: null, argTypes: ['number'], args: [number]): void;
+  ccall(name: 'luau_set_solver', returnType: null, argTypes: ['boolean'], args: [boolean]): void;
+  ccall(name: 'luau_get_config', returnType: 'string', argTypes: [], args: []): string;
+  
   // Memory
   _malloc(size: number): number;
   _free(ptr: number): void;

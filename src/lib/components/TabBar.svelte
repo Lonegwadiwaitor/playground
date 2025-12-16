@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
+  import ConfigPopover from '$lib/components/ConfigPopover.svelte';
   import { files, activeFile, addFile, removeFile, setActiveFile } from '$lib/stores/playground';
   import { toggleTheme, themeMode } from '$lib/utils/theme';
   import { runCode } from '$lib/luau/wasm';
@@ -87,6 +88,7 @@
 
   <!-- Actions - responsive sizing -->
   <div class="flex items-center gap-0.5 sm:gap-1 shrink-0 mb-1">
+    <ConfigPopover />
     <Button size="sm" variant="ghost" onclick={toggleTheme} class="w-8 sm:w-9">
       {getThemeIcon($themeMode)}
     </Button>

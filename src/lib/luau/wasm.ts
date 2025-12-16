@@ -5,6 +5,7 @@
  */
 
 import { appendOutput, clearOutput, setRunning, setExecutionTime, getActiveFileContent, activeFile, getAllFiles } from '$lib/stores/playground';
+import { settings, type LuauMode, type SolverMode } from '$lib/stores/settings';
 import { get } from 'svelte/store';
 import type { 
   LuauWasmModule, 
@@ -60,6 +61,20 @@ export async function loadLuauWasm(): Promise<LuauWasmModule> {
 
       wasmModule = module;
       console.log('[Luau WASM] Module loaded successfully');
+      
+      // Sync settings to WASM module
+      const currentSettings = get(settings);
+      const modeNum = currentSettings.mode === 'strict' ? 1 : currentSettings.mode === 'nocheck' ? 2 : 0;
+      try {
+        module.ccall('luau_set_mode', null, ['number'], [modeNum]);
+        module.ccall('luau_set_solver', null, ['boolean'], [currentSettings.solver === 'new']);
+      } catch {
+        // Ignore sync errors on load
+      }
+      
+      // Start listening to settings changes
+      initSettingsSync();
+      
       return module;
     } catch (error) {
       console.warn('[Luau WASM] Failed to load module, using mock:', error);
@@ -245,6 +260,54 @@ export async function setSource(name: string, source: string): Promise<void> {
 }
 
 /**
+ * Set the type checking mode.
+ */
+export async function setLuauMode(mode: LuauMode): Promise<void> {
+  const module = await loadLuauWasm();
+  const modeNum = mode === 'strict' ? 1 : mode === 'nocheck' ? 2 : 0;
+  try {
+    module.ccall('luau_set_mode', null, ['number'], [modeNum]);
+  } catch (error) {
+    console.error('[Luau] Failed to set mode:', error);
+  }
+}
+
+/**
+ * Set the solver mode.
+ */
+export async function setLuauSolver(solver: SolverMode): Promise<void> {
+  const module = await loadLuauWasm();
+  try {
+    module.ccall('luau_set_solver', null, ['boolean'], [solver === 'new']);
+  } catch (error) {
+    console.error('[Luau] Failed to set solver:', error);
+  }
+}
+
+/**
+ * Sync settings from store to WASM module.
+ */
+export async function syncSettings(): Promise<void> {
+  const currentSettings = get(settings);
+  await setLuauMode(currentSettings.mode);
+  await setLuauSolver(currentSettings.solver);
+}
+
+// Subscribe to settings changes and sync to WASM
+let settingsUnsubscribe: (() => void) | null = null;
+
+export function initSettingsSync(): void {
+  if (settingsUnsubscribe) return;
+  
+  settingsUnsubscribe = settings.subscribe(async (newSettings) => {
+    if (wasmModule) {
+      await setLuauMode(newSettings.mode);
+      await setLuauSolver(newSettings.solver);
+    }
+  });
+}
+
+/**
  * Register all files as modules (for require support).
  */
 async function registerAllModules(): Promise<void> {
@@ -408,6 +471,12 @@ function createMockModule(): LuauWasmModule {
         return JSON.stringify({ signatures: [] });
       case 'luau_version':
         return 'mock-1.0.0';
+      case 'luau_set_mode':
+        return undefined;
+      case 'luau_set_solver':
+        return undefined;
+      case 'luau_get_config':
+        return JSON.stringify({ mode: 'nonstrict', solver: 'new' });
       default:
         return '';
     }

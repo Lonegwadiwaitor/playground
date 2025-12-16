@@ -5,11 +5,11 @@
  * by integrating with the Luau WASM module.
  */
 
-import { EditorView, hoverTooltip } from '@codemirror/view';
+import { EditorView, hoverTooltip, ViewPlugin } from '@codemirror/view';
 import type { Tooltip } from '@codemirror/view';
 import { linter, lintGutter } from '@codemirror/lint';
 import type { Diagnostic } from '@codemirror/lint';
-import { autocompletion, CompletionContext } from '@codemirror/autocomplete';
+import { autocompletion, CompletionContext, startCompletion } from '@codemirror/autocomplete';
 import type { CompletionResult, Completion } from '@codemirror/autocomplete';
 import type { Extension } from '@codemirror/state';
 import { getDiagnostics, getAutocomplete, getHover, getAvailableModules, type LuauDiagnostic, type LuauCompletion } from '$lib/luau/wasm';
@@ -142,11 +142,19 @@ async function luauCompletionSource(context: CompletionContext): Promise<Complet
     return requireResult;
   }
   
-  // Get the word being typed
-  const word = context.matchBefore(/[\w.:]*/);
+  // Check for property access (table. or table:)
+  const beforeDot = context.matchBefore(/[\w.:]+[.:]/);
+  const word = context.matchBefore(/[\w]*/);
   
-  // Only trigger if we have explicit activation or after . or :
-  if (!context.explicit && (!word || word.from === word.to)) {
+  // Determine if we should trigger autocomplete
+  const afterDotOrColon = beforeDot !== null;
+  const hasWord = word && word.from !== word.to;
+  
+  // Only trigger if:
+  // - Explicit activation (Ctrl+Space)
+  // - After . or : (property access)
+  // - Has a word being typed
+  if (!context.explicit && !afterDotOrColon && !hasWord) {
     return null;
   }
   
@@ -172,8 +180,13 @@ async function luauCompletionSource(context: CompletionContext): Promise<Complet
       deprecated: item.deprecated,
     }));
     
+    // Calculate the correct 'from' position
+    // If we're after a . or :, start from the current word (after the accessor)
+    // Otherwise, start from the beginning of the word being typed
+    const from = word ? word.from : pos;
+    
     return {
-      from: word ? word.from : pos,
+      from,
       options: completions,
       validFor: /^[\w]*$/,
     };
@@ -186,12 +199,32 @@ async function luauCompletionSource(context: CompletionContext): Promise<Complet
 /**
  * Create an autocomplete extension.
  */
-function createLuauAutocomplete() {
-  return autocompletion({
-    override: [luauCompletionSource],
-    activateOnTyping: true,
-    icons: true,
+function createLuauAutocomplete(): Extension[] {
+  // Plugin to trigger completions after . and :
+  const triggerOnAccessor = ViewPlugin.fromClass(class {
+    constructor(readonly view: EditorView) {}
+  }, {
+    eventHandlers: {
+      keyup: (event, view) => {
+        // Trigger completion after typing . or :
+        if (event.key === '.' || event.key === ':') {
+          // Small delay to let the character be inserted first
+          setTimeout(() => startCompletion(view), 10);
+        }
+      }
+    }
   });
+
+  return [
+    autocompletion({
+      override: [luauCompletionSource],
+      activateOnTyping: true,
+      activateOnTypingDelay: 100,
+      icons: true,
+      closeOnBlur: true,
+    }),
+    triggerOnAccessor,
+  ];
 }
 
 // ============================================================================
@@ -270,7 +303,7 @@ export function luauLspExtensions(): Extension[] {
   return [
     createLuauLinter(),
     lintGutter(),
-    createLuauAutocomplete(),
+    ...createLuauAutocomplete(),
     createLuauHover(),
   ];
 }

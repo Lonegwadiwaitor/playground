@@ -503,11 +503,18 @@ static std::unique_ptr<PlaygroundFileResolver> g_fileResolver;
 static std::unique_ptr<PlaygroundConfigResolver> g_configResolver;
 static std::unique_ptr<Luau::Frontend> g_frontend;
 
+// Global configuration
+static Luau::Mode g_mode = Luau::Mode::Nonstrict;
+static bool g_useNewSolver = true;
+
 static void ensureAnalysisInit() {
     if (g_frontend) return;
     
     g_fileResolver = std::make_unique<PlaygroundFileResolver>();
     g_configResolver = std::make_unique<PlaygroundConfigResolver>();
+    
+    // Apply mode setting
+    g_configResolver->config.mode = g_mode;
     
     Luau::FrontendOptions options;
     options.retainFullTypeGraphs = true;
@@ -519,12 +526,95 @@ static void ensureAnalysisInit() {
         options
     );
     
+    // Set solver mode
+    if (g_useNewSolver) {
+        g_frontend->useNewLuauSolver.store(Luau::SolverMode::New);
+    } else {
+        g_frontend->useNewLuauSolver.store(Luau::SolverMode::Old);
+    }
+    
     // Register built-in types
     Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globals, false);
     Luau::freeze(g_frontend->globals.globalTypes);
     
     Luau::registerBuiltinGlobals(*g_frontend, g_frontend->globalsForAutocomplete, true);
     Luau::freeze(g_frontend->globalsForAutocomplete.globalTypes);
+}
+
+/**
+ * Set the type checking mode.
+ * @param mode 0 = Nonstrict, 1 = Strict, 2 = NoCheck
+ */
+EXPORT void luau_set_mode(int mode) {
+    switch (mode) {
+        case 0:
+            g_mode = Luau::Mode::Nonstrict;
+            break;
+        case 1:
+            g_mode = Luau::Mode::Strict;
+            break;
+        case 2:
+            g_mode = Luau::Mode::NoCheck;
+            break;
+        default:
+            g_mode = Luau::Mode::Nonstrict;
+            break;
+    }
+    
+    // Update existing config resolver if initialized
+    if (g_configResolver) {
+        g_configResolver->config.mode = g_mode;
+    }
+    
+    // Mark all files dirty to re-analyze with new mode
+    if (g_frontend && g_fileResolver) {
+        for (const auto& [name, _] : g_fileResolver->sources) {
+            g_frontend->markDirty(name);
+        }
+    }
+}
+
+/**
+ * Set the solver mode.
+ * @param useNew true = New solver, false = Old solver
+ */
+EXPORT void luau_set_solver(bool useNew) {
+    g_useNewSolver = useNew;
+    
+    // Reset frontend to apply new solver (solver mode is set at initialization)
+    if (g_frontend) {
+        if (g_useNewSolver) {
+            g_frontend->useNewLuauSolver.store(Luau::SolverMode::New);
+        } else {
+            g_frontend->useNewLuauSolver.store(Luau::SolverMode::Old);
+        }
+        
+        // Mark all files dirty to re-analyze with new solver
+        if (g_fileResolver) {
+            for (const auto& [name, _] : g_fileResolver->sources) {
+                g_frontend->markDirty(name);
+            }
+        }
+    }
+}
+
+/**
+ * Get current configuration.
+ * Returns: { "mode": "strict"|"nonstrict"|"nocheck", "solver": "new"|"old" }
+ */
+EXPORT const char* luau_get_config() {
+    std::string modeStr;
+    switch (g_mode) {
+        case Luau::Mode::Strict: modeStr = "strict"; break;
+        case Luau::Mode::Nonstrict: modeStr = "nonstrict"; break;
+        case Luau::Mode::NoCheck: modeStr = "nocheck"; break;
+        default: modeStr = "nonstrict"; break;
+    }
+    
+    std::ostringstream json;
+    json << "{\"mode\":" << ::json::string(modeStr);
+    json << ",\"solver\":" << ::json::string(g_useNewSolver ? "new" : "old") << "}";
+    return setResult(json.str());
 }
 
 /**

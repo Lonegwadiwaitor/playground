@@ -212,3 +212,20 @@ export function getEditorView(): EditorView | null {
 export function focusEditor(): void {
   editorView?.focus();
 }
+
+/**
+ * Force a refresh of diagnostics by simulating a document change.
+ * This is useful when settings change and we need to re-run the linter.
+ */
+export function refreshDiagnostics(): void {
+  if (editorView) {
+    const content = editorView.state.doc.toString();
+    // Insert and remove a space to trigger the linter
+    editorView.dispatch({
+      changes: { from: content.length, insert: ' ' },
+    });
+    editorView.dispatch({
+      changes: { from: content.length, to: content.length + 1 },
+    });
+  }
+}
