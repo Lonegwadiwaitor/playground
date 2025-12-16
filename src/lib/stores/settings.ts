@@ -1,4 +1,5 @@
 import { writable, get } from 'svelte/store';
+import LZString from 'lz-string';
 
 export type LuauMode = 'strict' | 'nonstrict' | 'nocheck';
 export type SolverMode = 'new' | 'old';
@@ -25,7 +26,35 @@ const defaultSettings: PlaygroundSettings = {
   compilerRemarks: false,
 };
 
-function loadSettings(): PlaygroundSettings {
+// Try to load settings from URL hash
+function loadSettingsFromUrl(): { settings: PlaygroundSettings | null; showBytecode: boolean | null } {
+  if (typeof window === 'undefined') {
+    return { settings: null, showBytecode: null };
+  }
+  
+  const hash = window.location.hash;
+  if (!hash.startsWith('#code=')) {
+    return { settings: null, showBytecode: null };
+  }
+  
+  try {
+    const encoded = hash.slice(6); // Remove '#code='
+    const json = LZString.decompressFromEncodedURIComponent(encoded);
+    if (!json) {
+      return { settings: null, showBytecode: null };
+    }
+    
+    const state = JSON.parse(json) as { settings?: PlaygroundSettings; showBytecode?: boolean };
+    return {
+      settings: state.settings ?? null,
+      showBytecode: state.showBytecode ?? null,
+    };
+  } catch {
+    return { settings: null, showBytecode: null };
+  }
+}
+
+function loadSettingsFromStorage(): PlaygroundSettings {
   if (typeof window === 'undefined') {
     return { ...defaultSettings };
   }
@@ -49,6 +78,35 @@ function loadSettings(): PlaygroundSettings {
   return { ...defaultSettings };
 }
 
+function mergeSettings(partial: Partial<PlaygroundSettings>): PlaygroundSettings {
+  return {
+    mode: partial.mode ?? defaultSettings.mode,
+    solver: partial.solver ?? defaultSettings.solver,
+    optimizationLevel: partial.optimizationLevel ?? defaultSettings.optimizationLevel,
+    debugLevel: partial.debugLevel ?? defaultSettings.debugLevel,
+    compilerRemarks: partial.compilerRemarks ?? defaultSettings.compilerRemarks,
+  };
+}
+
+function loadSettings(): { settings: PlaygroundSettings; showBytecode: boolean } {
+  // First try to load from URL (takes priority for shared links)
+  const urlState = loadSettingsFromUrl();
+  
+  if (urlState.settings) {
+    // URL settings found - use them (with defaults for any missing fields)
+    return {
+      settings: mergeSettings(urlState.settings),
+      showBytecode: urlState.showBytecode ?? false,
+    };
+  }
+  
+  // Fall back to localStorage
+  return {
+    settings: loadSettingsFromStorage(),
+    showBytecode: false,
+  };
+}
+
 function saveSettings(settings: PlaygroundSettings): void {
   if (typeof window === 'undefined') return;
   
@@ -59,12 +117,12 @@ function saveSettings(settings: PlaygroundSettings): void {
   }
 }
 
-const initialSettings = loadSettings();
+const initialState = loadSettings();
 
-export const settings = writable<PlaygroundSettings>(initialSettings);
+export const settings = writable<PlaygroundSettings>(initialState.settings);
 
-// Separate store for bytecode panel visibility (not persisted)
-export const showBytecode = writable<boolean>(false);
+// Separate store for bytecode panel visibility
+export const showBytecode = writable<boolean>(initialState.showBytecode);
 
 // Auto-save settings when they change
 settings.subscribe((value) => {

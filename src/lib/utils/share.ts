@@ -5,6 +5,7 @@
  */
 
 import { files, activeFile } from '$lib/stores/playground';
+import { settings, showBytecode, type PlaygroundSettings } from '$lib/stores/settings';
 import { get } from 'svelte/store';
 import LZString from 'lz-string';
 
@@ -12,6 +13,8 @@ export interface ShareState {
   files: Record<string, string>;
   active: string;
   v: number; // Version for future compatibility
+  settings?: PlaygroundSettings;
+  showBytecode?: boolean;
 }
 
 const CURRENT_VERSION = 1;
@@ -52,6 +55,8 @@ export async function sharePlayground(): Promise<boolean> {
     files: get(files),
     active: get(activeFile),
     v: CURRENT_VERSION,
+    settings: get(settings),
+    showBytecode: get(showBytecode),
   };
 
   const encoded = encodeState(state);
