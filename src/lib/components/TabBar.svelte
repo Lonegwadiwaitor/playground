@@ -115,7 +115,7 @@
         class="px-2 sm:px-3"
       >
         <span class="hidden sm:inline">Bytecode</span>
-        <span class="sm:hidden font-mono">{'{}'}</span>
+        <span class="sm:hidden"><Icon name="binary" size={16} /></span>
       </Button>
       <Button size="sm" variant="secondary" onclick={handleShare} class="px-2 sm:px-3 sm:min-w-14">
         {#if shareSuccess === true}
