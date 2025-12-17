@@ -2,7 +2,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Icon, type IconName } from '$lib/icons';
   import ConfigPopover from '$lib/components/ConfigPopover.svelte';
-  import { files, activeFile, addFile, removeFile, setActiveFile } from '$lib/stores/playground';
+  import { files, activeFile, addFile, removeFile, setActiveFile, renameFile } from '$lib/stores/playground';
   import { showBytecode, toggleBytecode } from '$lib/stores/settings';
   import { toggleTheme, themeMode } from '$lib/utils/theme';
   import { runCode, checkCode } from '$lib/luau/wasm';
@@ -10,16 +10,72 @@
   import { isEmbed } from '$lib/stores/embed';
 
   let newFileName = $state('');
-  let showNewFileInput = $state(false);
+  let isCreatingFile = $state(false);
+  let editingFileName = $state<string | null>(null);
+  let editValue = $state('');
   let shareSuccess = $state<boolean | null>(null);
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
+  }
 
   function handleAddFile() {
-    if (newFileName.trim()) {
-      const name = newFileName.endsWith('.luau') ? newFileName : `${newFileName}.luau`;
+    if (!isCreatingFile) return;
+    const trimmed = newFileName.trim();
+    if (trimmed) {
+      const name = trimmed.endsWith('.luau') ? trimmed : `${trimmed}.luau`;
       addFile(name, '-- New file\n');
-      newFileName = '';
-      showNewFileInput = false;
     }
+    newFileName = '';
+    isCreatingFile = false;
+  }
+
+  function startCreatingFile() {
+    if (isCreatingFile) return;
+    isCreatingFile = true;
+    newFileName = '';
+  }
+
+  function startEditing(fileName: string) {
+    editingFileName = fileName;
+    // Remove .luau extension for editing
+    editValue = fileName.endsWith('.luau') ? fileName.slice(0, -5) : fileName;
+  }
+
+  function finishEditing(originalName: string) {
+    if (editingFileName !== originalName) return;
+    
+    const trimmed = editValue.trim();
+    if (trimmed) {
+      const newName = trimmed.endsWith('.luau') ? trimmed : `${trimmed}.luau`;
+      if (newName !== originalName) {
+        renameFile(originalName, newName);
+      }
+    }
+    editingFileName = null;
+    editValue = '';
+  }
+
+  function handleTabPointerDown(fileName: string, e: PointerEvent) {
+    // Start long press timer for editing
+    longPressTimer = setTimeout(() => {
+      startEditing(fileName);
+      longPressTimer = null;
+    }, 500);
+  }
+
+  function handleTabPointerUp() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function handleTabDblClick(fileName: string, e: MouseEvent) {
+    e.stopPropagation();
+    startEditing(fileName);
   }
 
   function handleRun() {
@@ -58,17 +114,39 @@
   <div class="flex items-end gap-0.5 flex-1 overflow-x-auto scrollbar-hide">
     {#each Object.keys($files) as fileName}
       <div
-        class="group relative flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm rounded-t-md transition-colors cursor-pointer shrink-0
+        class="group relative flex items-center gap-1 px-2 sm:px-3 py-1.5 text-sm leading-5 rounded-t-md transition-colors cursor-pointer shrink-0 select-none border-t border-x
           {$activeFile === fileName 
-            ? 'bg-[var(--bg-editor)] text-[var(--text-primary)] border-t border-x border-[var(--border-color)] z-10' 
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] mb-px'}"
+            ? 'bg-[var(--bg-editor)] text-[var(--text-primary)] border-[var(--border-color)] z-10 -mb-px' 
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border-transparent -mb-px'}"
         role="button"
         tabindex="0"
-        onclick={() => setActiveFile(fileName)}
-        onkeydown={(e) => e.key === 'Enter' && setActiveFile(fileName)}
+        onclick={() => editingFileName !== fileName && setActiveFile(fileName)}
+        onkeydown={(e) => e.key === 'Enter' && editingFileName !== fileName && setActiveFile(fileName)}
+        ondblclick={(e) => !$isEmbed && handleTabDblClick(fileName, e)}
+        onpointerdown={(e) => !$isEmbed && handleTabPointerDown(fileName, e)}
+        onpointerup={handleTabPointerUp}
+        onpointerleave={handleTabPointerUp}
       >
-        <span class="truncate max-w-[80px] sm:max-w-[120px]">{fileName}</span>
-        {#if Object.keys($files).length > 1 && !$isEmbed}
+        {#if editingFileName === fileName}
+          <input
+            type="text"
+            class="w-20 sm:w-24 text-sm bg-transparent text-inherit focus:outline-none caret-[var(--accent)]"
+            bind:value={editValue}
+            use:focusInput
+            onblur={() => finishEditing(fileName)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.blur();
+              }
+            }}
+            onclick={(e) => e.stopPropagation()}
+          />
+        {:else}
+          <span class="truncate max-w-[80px] sm:max-w-[120px]">{fileName}</span>
+        {/if}
+        {#if Object.keys($files).length > 1 && !$isEmbed && editingFileName !== fileName}
           <button
             class="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-[var(--color-error-500)] ml-1 p-1 -m-1"
             onclick={(e) => { e.stopPropagation(); removeFile(fileName); }}
@@ -80,24 +158,39 @@
       </div>
     {/each}
 
-    <!-- Add file button (hidden in embed mode) -->
+    <!-- Add file tab (hidden in embed mode) -->
     {#if !$isEmbed}
-      {#if showNewFileInput}
-        <form class="flex items-center gap-1 ml-1 shrink-0 mb-1" onsubmit={(e) => { e.preventDefault(); handleAddFile(); }}>
-          <!-- svelte-ignore a11y_autofocus -->
+      <div
+        class="group relative flex items-center justify-center gap-1 px-2 sm:px-3 py-1.5 text-sm leading-5 rounded-t-md transition-colors cursor-pointer shrink-0 border-t border-x
+          {isCreatingFile 
+            ? 'bg-[var(--bg-editor)] text-[var(--text-primary)] border-[var(--border-color)] z-10 -mb-px' 
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] border-transparent -mb-px'}"
+        role="button"
+        tabindex="0"
+        onclick={(e) => { e.stopPropagation(); startCreatingFile(); }}
+        onkeydown={(e) => { if (e.key === 'Enter' && !isCreatingFile) startCreatingFile(); }}
+      >
+        {#if isCreatingFile}
           <input
             type="text"
-            class="w-20 sm:w-24 px-2 py-1 text-sm bg-[var(--bg-editor)] border border-[var(--border-color)] rounded focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            class="w-20 sm:w-24 text-sm bg-transparent text-inherit placeholder:opacity-50 focus:outline-none caret-[var(--accent)]"
             placeholder="filename"
             bind:value={newFileName}
-            autofocus
+            use:focusInput
+            onblur={handleAddFile}
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.blur();
+              }
+            }}
+            onclick={(e) => e.stopPropagation()}
           />
-          <Button size="sm" variant="ghost" type="submit"><Icon name="check" size={16} /></Button>
-          <Button size="sm" variant="ghost" onclick={() => showNewFileInput = false}><Icon name="x" size={16} /></Button>
-        </form>
-      {:else}
-        <Button size="sm" variant="ghost" onclick={() => showNewFileInput = true} class="shrink-0 mb-1"><Icon name="plus" size={16} /></Button>
-      {/if}
+        {:else}
+          <span class="h-5 flex items-center"><Icon name="plus" size={16} /></span>
+        {/if}
+      </div>
     {/if}
   </div>
 

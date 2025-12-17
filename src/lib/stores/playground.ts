@@ -102,6 +102,22 @@ export function updateFile(name: string, content: string) {
   files.update((f) => ({ ...f, [name]: content }));
 }
 
+export function renameFile(oldName: string, newName: string) {
+  if (oldName === newName) return;
+  
+  files.update((f) => {
+    const content = f[oldName];
+    const { [oldName]: _, ...rest } = f;
+    return { ...rest, [newName]: content };
+  });
+  
+  // Update active file if we renamed it
+  const currentActive = get(activeFile);
+  if (currentActive === oldName) {
+    activeFile.set(newName);
+  }
+}
+
 export function setActiveFile(name: string) {
   activeFile.set(name);
 }
