@@ -7,6 +7,7 @@ A browser-based Luau code playground with execution and IDE features.
 ## Features
 
 - **Code Execution**: Run Luau code directly in the browser via WebAssembly
+- **Type Checking**: Type check Luau code directly in the browser via WebAssembly
 - **Syntax Highlighting**: Full Luau syntax support with light/dark themes
 - **IDE Features**: 
   - Real-time diagnostics (type errors, lint warnings)
@@ -15,15 +16,13 @@ A browser-based Luau code playground with execution and IDE features.
 - **Multi-file Support**: Create and manage multiple files with tabs
 - **Sharing**: Compress and share playground state via URL
 - **Mobile Friendly**: Responsive design that works on phones and tablets
-- **Theme Support**: System theme detection with manual toggle (light/dark/system)
+- **Bytecode View**: View the bytecode of the compiled code
 
-## Tech Stack
+## Stack
 
 - **Frontend**: Svelte 5 + Vite
 - **Editor**: CodeMirror 6 with custom Luau language mode
-- **Styling**: Tailwind CSS 4 + shadcn-svelte components
 - **Runtime**: Luau compiled to WebAssembly
-- **Sharing**: LZ-String compression for URL encoding
 
 ## Getting Started
 
@@ -65,60 +64,40 @@ source ~/emsdk/emsdk_env.sh  # Adjust path as needed
 ./build.sh release
 ```
 
-The built WASM files will be copied to `static/wasm/`.
-
-## Project Structure
-
-```
-playground/
-├── src/
-│   ├── lib/
-│   │   ├── components/       # UI components
-│   │   │   ├── ui/           # shadcn-svelte components
-│   │   │   ├── TabBar.svelte
-│   │   │   ├── Editor.svelte
-│   │   │   └── Output.svelte
-│   │   ├── editor/           # CodeMirror setup
-│   │   │   ├── setup.ts      # Editor initialization
-│   │   │   ├── luauLanguage.ts # Syntax highlighting
-│   │   │   ├── lspExtensions.ts # Diagnostics, autocomplete, hover
-│   │   │   └── themes.ts     # Light/dark themes
-│   │   ├── luau/             # WASM integration
-│   │   │   ├── wasm.ts       # Module loader
-│   │   │   └── types.ts      # TypeScript types
-│   │   ├── stores/           # Svelte stores
-│   │   │   └── playground.ts # App state
-│   │   └── utils/
-│   │       ├── theme.ts      # Theme detection
-│   │       └── share.ts      # URL encoding
-│   ├── App.svelte
-│   └── main.ts
-├── static/
-│   └── wasm/                 # Built WASM files
-├── wasm/                     # WASM source
-│   ├── src/
-│   │   └── playground.cpp    # C++ bindings
-│   ├── luau/                 # Luau source (git clone)
-│   ├── CMakeLists.txt
-│   └── build.sh
-└── package.json
-```
+The built WASM file will be copied to `public/wasm/`.
 
 ## API
 
 ### URL Parameters
 
+#### Share State (Hash)
+
 Share playground state via URL hash:
 
 ```
-https://playground.luau.org/#code=<compressed-state>
+https://play.luau.org/#code=<compressed-state>
 ```
 
 The state is LZ-String compressed JSON containing:
 - `files`: Object mapping filenames to content
 - `active`: Currently active filename
 - `v`: Version number for compatibility
+- `settings`: Optional compiler/type-checking settings
+  - `mode`: `"strict"` | `"nonstrict"` | `"nocheck"`
+  - `solver`: `"new"` | `"old"`
+  - `optimizationLevel`: `0` | `1` | `2`
+  - `debugLevel`: `0` | `1` | `2`
+  - `compilerRemarks`: `boolean`
+- `showBytecode`: Optional boolean to show bytecode panel
 
-## License
+#### Embed Mode (Query Parameters)
 
-MIT
+Embed the playground in an iframe with a minimal UI:
+
+```
+https://play.luau.org/?embed=true#code=<compressed-state>
+```
+
+Query parameters:
+- `embed=true`: Enables embed mode (hides settings, bytecode toggle, share button)
+- `theme=light|dark`: Force a specific theme (defaults to `auto` which follows system preference)
