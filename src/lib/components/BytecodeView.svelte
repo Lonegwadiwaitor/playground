@@ -3,6 +3,7 @@
   import { settings, showBytecode, toggleBytecode } from '$lib/stores/settings';
   import { getBytecode } from '$lib/luau/wasm';
   import { Button } from '$lib/components/ui/button';
+  import { Icon } from '$lib/icons';
 
   interface ParsedInstruction {
     lineNum: string;
@@ -135,8 +136,8 @@
           <span class="text-xs text-[var(--text-muted)] animate-pulse">compiling...</span>
         {/if}
       </div>
-      <Button size="sm" variant="ghost" onclick={toggleBytecode} class="h-6 w-6 p-0">
-        ×
+      <Button size="sm" variant="ghost" onclick={toggleBytecode} class="h-6 w-6 p-0 min-w-0">
+        <Icon name="x" size={16} />
       </Button>
     </div>
 

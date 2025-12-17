@@ -2,6 +2,7 @@
   import { output, isRunning, clearOutput, executionTime } from '$lib/stores/playground';
   import { isEmbed } from '$lib/stores/embed';
   import { Button } from '$lib/components/ui/button';
+  import { Icon } from '$lib/icons';
   import { formatTime, isStackTraceLine, formatStackLine } from '$lib/utils/output';
 
   // In embed mode: collapsed by default, smaller when expanded
@@ -36,10 +37,10 @@
       onclick={() => isExpanded = !isExpanded}
     >
       <span 
-        class="text-xs transition-transform duration-200" 
+        class="transition-transform duration-200" 
         style="transform: rotate({isExpanded ? 90 : 0}deg)"
       >
-        ▶
+        <Icon name="chevronRight" size={16} />
       </span>
       <span>Output</span>
       {#if $isRunning}

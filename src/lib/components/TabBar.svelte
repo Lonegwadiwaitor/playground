@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
+  import { Icon, type IconName } from '$lib/icons';
   import ConfigPopover from '$lib/components/ConfigPopover.svelte';
   import { files, activeFile, addFile, removeFile, setActiveFile } from '$lib/stores/playground';
   import { showBytecode, toggleBytecode } from '$lib/stores/settings';
@@ -37,10 +38,10 @@
     }, 2000);
   }
 
-  function getThemeIcon(mode: string): string {
-    if (mode === 'system') return '◐';
-    if (mode === 'light') return '☀';
-    return '☾';
+  function getThemeIcon(mode: string): IconName {
+    if (mode === 'system') return 'auto';
+    if (mode === 'light') return 'sun';
+    return 'moon';
   }
 
   function handleOpenInPlayground() {
@@ -69,11 +70,11 @@
         <span class="truncate max-w-[80px] sm:max-w-[120px]">{fileName}</span>
         {#if Object.keys($files).length > 1 && !$isEmbed}
           <button
-            class="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-[var(--color-error-500)] ml-1 text-xs p-1 -m-1"
+            class="opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-[var(--color-error-500)] ml-1 p-1 -m-1"
             onclick={(e) => { e.stopPropagation(); removeFile(fileName); }}
             aria-label="Close tab"
           >
-            ×
+            <Icon name="x" size={16} />
           </button>
         {/if}
       </div>
@@ -83,6 +84,7 @@
     {#if !$isEmbed}
       {#if showNewFileInput}
         <form class="flex items-center gap-1 ml-1 shrink-0 mb-1" onsubmit={(e) => { e.preventDefault(); handleAddFile(); }}>
+          <!-- svelte-ignore a11y_autofocus -->
           <input
             type="text"
             class="w-20 sm:w-24 px-2 py-1 text-sm bg-[var(--bg-editor)] border border-[var(--border-color)] rounded focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
@@ -90,11 +92,11 @@
             bind:value={newFileName}
             autofocus
           />
-          <Button size="sm" variant="ghost" type="submit">✓</Button>
-          <Button size="sm" variant="ghost" onclick={() => showNewFileInput = false}>×</Button>
+          <Button size="sm" variant="ghost" type="submit"><Icon name="check" size={16} /></Button>
+          <Button size="sm" variant="ghost" onclick={() => showNewFileInput = false}><Icon name="x" size={16} /></Button>
         </form>
       {:else}
-        <Button size="sm" variant="ghost" onclick={() => showNewFileInput = true} class="shrink-0 mb-1">+</Button>
+        <Button size="sm" variant="ghost" onclick={() => showNewFileInput = true} class="shrink-0 mb-1"><Icon name="plus" size={16} /></Button>
       {/if}
     {/if}
   </div>
@@ -103,8 +105,8 @@
   <div class="flex items-center gap-0.5 sm:gap-1 shrink-0 mb-1">
     {#if !$isEmbed}
       <ConfigPopover />
-      <Button size="sm" variant="ghost" onclick={toggleTheme} class="w-8 sm:w-9">
-        {getThemeIcon($themeMode)}
+      <Button size="sm" variant="ghost" onclick={toggleTheme} class="w-8 sm:w-9 px-0">
+        <Icon name={getThemeIcon($themeMode)} size={16} />
       </Button>
       <Button 
         size="sm" 
@@ -115,29 +117,29 @@
         <span class="hidden sm:inline">Bytecode</span>
         <span class="sm:hidden font-mono">{'{}'}</span>
       </Button>
-      <Button size="sm" variant="secondary" onclick={handleShare} class="px-2 sm:px-3">
+      <Button size="sm" variant="secondary" onclick={handleShare} class="px-2 sm:px-3 sm:min-w-14">
         {#if shareSuccess === true}
-          ✓
+          <Icon name="check" size={16} />
         {:else if shareSuccess === false}
-          URL ↗
+          <span class="flex items-center gap-1">URL <Icon name="external" size={16} /></span>
         {:else}
-          <span class="hidden sm:inline">Share</span>
-          <span class="sm:hidden">↗</span>
+          <span class="hidden sm:inline-flex items-center gap-1">Share</span>
+          <span class="sm:hidden"><Icon name="share" size={16} /></span>
         {/if}
       </Button>
     {/if}
     <Button size="sm" variant="secondary" onclick={handleCheck} class="px-2 sm:px-3">
       <span class="hidden sm:inline">Check</span>
-      <span class="sm:hidden">✓</span>
+      <span class="sm:hidden"><Icon name="check"size={16} /></span>
     </Button>
     <Button size="sm" onclick={handleRun} class="px-2 sm:px-3">
-      <span class="sm:mr-1">▶</span>
+      <span class="sm:mr-1"><Icon name="play"size={16} /></span>
       <span class="hidden sm:inline">Run</span>
     </Button>
     {#if $isEmbed}
       <Button size="sm" variant="secondary" onclick={handleOpenInPlayground} class="px-2 sm:px-3">
-        <span class="hidden sm:inline">Open ↗</span>
-        <span class="sm:hidden">↗</span>
+        <span class="hidden sm:inline items-center gap-1">Open</span>
+        <span class="sm:hidden"><Icon name="external"size={16} /></span>
       </Button>
     {/if}
   </div>

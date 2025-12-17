@@ -13,6 +13,7 @@
     type DebugLevel
   } from '$lib/stores/settings';
   import { Button } from '$lib/components/ui/button';
+  import { Icon } from '$lib/icons';
   import { refreshDiagnostics } from '$lib/editor/setup';
 
   let open = $state(false);
@@ -54,8 +55,8 @@
 <Popover.Root bind:open>
   <Popover.Trigger>
     {#snippet child({ props })}
-      <Button {...props} size="sm" variant="ghost" class="w-8 sm:w-9 text-lg">
-        ⚙
+      <Button {...props} size="sm" variant="ghost" class="w-8 sm:w-9 px-0">
+        <Icon name="gear" size={16} />
       </Button>
     {/snippet}
   </Popover.Trigger>
