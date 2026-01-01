@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { files, activeFile } from '$lib/stores/playground';
+  import { files, activeFile, cursorLine } from '$lib/stores/playground';
   import { settings, showBytecode, toggleBytecode } from '$lib/stores/settings';
   import { getBytecode } from '$lib/luau/wasm';
   import { Button } from '$lib/components/ui/button';
@@ -7,6 +7,7 @@
 
   interface ParsedInstruction {
     lineNum: string;
+    sourceLine: number;
     label: string;
     opcode: string;
     operands: string;
@@ -77,6 +78,7 @@
 
         currentFunc.instructions.push({
           lineNum: String(instructionNum),
+          sourceLine: parseInt(srcLine, 10),
           label: label || '',
           opcode,
           operands,
@@ -143,9 +145,9 @@
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed min-h-0 bytecode-view">
+    <div class="flex-1 overflow-auto py-3 font-mono text-xs leading-relaxed min-h-0 bytecode-view">
       {#if error}
-        <div class="text-[var(--color-error-500)]">
+        <div class="text-[var(--color-error-500)] px-3">
           <div class="font-semibold mb-1">Compilation Error:</div>
           <pre class="whitespace-pre-wrap">{error}</pre>
         </div>
@@ -163,7 +165,7 @@
             <table class="bytecode-table">
               <tbody>
                 {#each func.instructions as instr}
-                  <tr>
+                  <tr class:highlighted={instr.sourceLine === $cursorLine}>
                     <td class="line-num">{instr.lineNum}</td>
                     <td class="label">{instr.label}</td>
                     <td class="opcode">{instr.opcode}</td>
@@ -182,9 +184,9 @@
         {/each}
       {:else if bytecodeContent}
         <!-- Fallback to raw output if parsing failed -->
-        <pre class="text-[var(--text-primary)] whitespace-pre">{bytecodeContent}</pre>
+        <pre class="text-[var(--text-primary)] whitespace-pre px-3">{bytecodeContent}</pre>
       {:else if !isLoading}
-        <span class="text-[var(--text-muted)] italic">No bytecode generated</span>
+        <span class="text-[var(--text-muted)] italic px-3">No bytecode generated</span>
       {/if}
     </div>
   </div>
@@ -216,7 +218,7 @@
   }
 
   .func-header, .func-end {
-    padding: 2px 0;
+    padding: 2px 0.75rem;
   }
 
   .keyword {
@@ -235,6 +237,7 @@
   .bytecode-table {
     border-collapse: collapse;
     margin: 0.25em 0;
+    width: 100%;
   }
 
   .bytecode-table td {
@@ -243,9 +246,18 @@
     vertical-align: top;
   }
 
+  .bytecode-table tr.highlighted {
+    background: oklch(0.92 0.05 90);
+  }
+
+  :global(.dark) .bytecode-table tr.highlighted {
+    background: oklch(0.3 0.05 90);
+  }
+
   .bytecode-table .line-num {
     color: var(--bc-line-num);
     text-align: right;
+    padding-left: 0.75rem;
     padding-right: 1.5em;
     min-width: 3em;
     user-select: none;
@@ -272,6 +284,8 @@
 
   .bytecode-table .comment {
     color: var(--bc-comment);
+    padding-right: 0.75rem;
+    width: 100%;
   }
 
   .func-end {

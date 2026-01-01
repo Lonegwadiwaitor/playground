@@ -71,6 +71,7 @@ export const activeFile = writable<string>(initialState.activeFile);
 export const output = writable<OutputLine[]>([]);
 export const isRunning = writable<boolean>(false);
 export const executionTime = writable<number | null>(null);
+export const cursorLine = writable<number>(1);
 
 export function setExecutionTime(ms: number | null) {
   executionTime.set(ms);

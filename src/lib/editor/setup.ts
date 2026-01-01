@@ -16,6 +16,7 @@ import { luauTextMate, onGrammarReady } from './textmate';
 import { darkTheme, lightTheme } from './themes';
 import { luauLspExtensions } from './lspExtensions';
 import { themeMode } from '$lib/utils/theme';
+import { cursorLine } from '$lib/stores/playground';
 import { get } from 'svelte/store';
 
 let editorView: EditorView | null = null;
@@ -96,6 +97,13 @@ function createExtensions(onChange: (content: string) => void): Extension[] {
     EditorView.updateListener.of((update) => {
       if (update.docChanged && onChange) {
         onChange(update.state.doc.toString());
+      }
+      
+      // Track cursor line changes for bytecode highlighting
+      if (update.selectionSet || update.docChanged) {
+        const pos = update.state.selection.main.head;
+        const line = update.state.doc.lineAt(pos).number;
+        cursorLine.set(line);
       }
     }),
   ];
