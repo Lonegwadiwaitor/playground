@@ -77,6 +77,48 @@
     });
   }
 
+  // Highlight IR instruction arguments
+  function highlightIrArgs(args: string): string {
+    return args
+      // %N variables
+      .replace(/(%\d+)\b/g, '<span class="hl-ir-var">$1</span>')
+      // Registers R0-R99
+      .replace(/\b(R\d+)\b/g, '<span class="hl-constant">$1</span>')
+      // Constants K0-K99
+      .replace(/\b(K\d+)\b/g, '<span class="hl-constant">$1</span>')
+      // String literals in parens like ('Hello')
+      .replace(/\('([^']+)'\)/g, '(<span class="hl-string">\'$1\'</span>)')
+      // Numbers with suffixes like 0i, 4u, tstring
+      .replace(/\b(\d+[iu]?)\b/g, '<span class="hl-constant">$1</span>')
+      // Type names like tstring, tany
+      .replace(/\b(t[a-z]+)\b/g, '<span class="hl-type">$1</span>');
+  }
+
+  // Highlight assembly instruction arguments
+  function highlightAsmArgs(args: string): string {
+    return args
+      // x86 registers: rax, rbx, r12, xmm0, etc.
+      .replace(/\b(r[0-9]{1,2}[dwb]?|[re]?[abcd]x|[re]?[sd]i|[re]?[sb]p|[re]?ip|xmm\d+|ymm\d+|zmm\d+)\b/gi, '<span class="hl-constant">$1</span>')
+      // ARM registers: x0-x30, w0-w30, q0-q31, v0-v31, sp, lr, etc.
+      .replace(/\b([xwqvsd]\d{1,2}|sp|lr|pc|fp)\b/gi, '<span class="hl-constant">$1</span>')
+      // ARM immediate values: #32, #1700, #0x10
+      .replace(/#(0x[0-9a-fA-F]+|\d+)/g, '#<span class="hl-constant">$1</span>')
+      // Memory operands with brackets [...]
+      .replace(/\[([^\]]+)\]/g, (match, inner) => {
+        // Highlight registers and numbers inside brackets
+        const highlighted = inner
+          .replace(/\b(r[0-9]{1,2}[dwb]?|[re]?[abcd]x|[re]?[sd]i|[re]?[sb]p|[re]?ip|[xwqvsd]\d{1,2}|sp|lr|pc|fp)\b/gi, '<span class="hl-constant">$1</span>')
+          .replace(/\b(0x[0-9a-fA-F]+|\d+h?)\b/g, '<span class="hl-constant">$1</span>')
+          // ARM immediates inside brackets
+          .replace(/#(0x[0-9a-fA-F]+|\d+)/g, '#<span class="hl-constant">$1</span>');
+        return `[${highlighted}]`;
+      })
+      // Hex numbers and plain numbers
+      .replace(/\b(0x[0-9a-fA-F]+)\b/g, '<span class="hl-constant">$1</span>')
+      // Labels like .L14
+      .replace(/(\.[A-Za-z0-9_]+)\b/g, '<span class="hl-label">$1</span>');
+  }
+
   // Syntax highlight a line based on its content
   function highlightLine(line: string, type: string): string {
     // Escape HTML
@@ -109,11 +151,12 @@
             result += `<span class="hl-label">${label}</span>${colon2}`;
           }
           result += `<span class="hl-opcode">${opcode}</span>${space1}`;
-          // Highlight registers (R0-R99) and constants (K0-K99)
+          // Highlight registers (R0-R99), constants (K0-K99), labels (L0-L99), and plain numbers
           const highlightedOperands = operands
-            .replace(/\b(R\d+)\b/g, '<span class="hl-register">$1</span>')
+            .replace(/\b(R\d+)\b/g, '<span class="hl-constant">$1</span>')
             .replace(/\b(K\d+)\b/g, '<span class="hl-constant">$1</span>')
-            .replace(/\b(L\d+)\b/g, '<span class="hl-label">$1</span>');
+            .replace(/\b(L\d+)\b/g, '<span class="hl-label">$1</span>')
+            .replace(/\b(-?\d+)\b/g, '<span class="hl-constant">$1</span>');
           result += highlightedOperands;
           if (comment) {
             // Highlight string literals in comments (e.g., 'Hello')
@@ -138,14 +181,24 @@
       // IR instructions with assignment: "#   %N = OP args"
       escaped = escaped.replace(
         /^(#\s+)(%\d+)(\s*=\s*)(\w+)(.*)$/,
-        '<span class="hl-ir-prefix">$1</span><span class="hl-ir-var">$2</span>$3<span class="hl-ir-op">$4</span><span class="hl-ir-args">$5</span>'
+        (_, prefix, varName, eq, op, args) => {
+          const highlightedArgs = highlightIrArgs(args);
+          return `<span class="hl-ir-prefix">${prefix}</span><span class="hl-ir-var">${varName}</span>${eq}<span class="hl-ir-op">${op}</span>${highlightedArgs}`;
+        }
       );
       // IR instructions without assignment: "#   OP args"
       if (!escaped.includes('hl-ir-op')) {
         escaped = escaped.replace(
           /^(#\s+)(\w+)(\s+.*)$/,
-          '<span class="hl-ir-prefix">$1</span><span class="hl-ir-op">$2</span><span class="hl-ir-args">$3</span>'
+          (_, prefix, op, args) => {
+            const highlightedArgs = highlightIrArgs(args);
+            return `<span class="hl-ir-prefix">${prefix}</span><span class="hl-ir-op">${op}</span>${highlightedArgs}`;
+          }
         );
+      }
+      // Standalone # line
+      if (!escaped.includes('hl-')) {
+        escaped = escaped.replace(/^(#.*)$/, '<span class="hl-ir-prefix">$1</span>');
       }
       return escaped;
     }
@@ -164,16 +217,23 @@
       if (!escaped.includes('hl-label')) {
         escaped = escaped.replace(
           /^(\s*)([a-z][a-z0-9.]*)(\s+)(.*)$/i,
-          '$1<span class="hl-asm-op">$2</span>$3<span class="hl-asm-args">$4</span>'
+          (_, indent, op, space, args) => {
+            const highlightedArgs = highlightAsmArgs(args);
+            return `${indent}<span class="hl-asm-op">${op}</span>${space}${highlightedArgs}`;
+          }
         );
       }
       return escaped;
     }
 
-    // Type annotations: "type <- type, type"
+    // Type annotations: "type <- type, type" (the <- is HTML-escaped as &lt;-)
     escaped = escaped.replace(
       /^(\w+)(\s*&lt;-\s*)(.+)$/,
-      '<span class="hl-type">$1</span><span class="hl-comment">$2$3</span>'
+      (_, left, arrow, right) => {
+        // Highlight type names on the right side too
+        const highlightedRight = right.replace(/\b(\w+)\b/g, '<span class="hl-type">$1</span>');
+        return `<span class="hl-type">${left}</span><span class="hl-comment"> ← </span>${highlightedRight}`;
+      }
     );
 
     return escaped;
