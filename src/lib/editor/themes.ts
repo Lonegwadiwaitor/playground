@@ -47,69 +47,69 @@ interface ThemeColors {
   infoBg: string;
 }
 
-// Colors from design system palette (using CSS variables for surface colors)
+// Colors from design system palette (using CSS variables from app.css)
 const darkColors: ThemeColors = {
   background: "var(--editor-surface-0)",
-  foreground: "rgb(238, 239, 241)", // gray-200
-  selection: "rgba(112, 160, 255, 0.3)", // blue-500
+  foreground: "var(--color-extended-gray-200)",
+  selection: "color-mix(in srgb, var(--color-blue-500) 30%, transparent)",
   activeLine: "var(--editor-surface-100)",
-  cursor: "rgb(112, 160, 255)", // blue-500
-  lineNumber: "rgb(106, 111, 129)", // gray-600
-  lineNumberActive: "rgb(188, 190, 200)", // gray-500
+  cursor: "var(--color-blue-500)",
+  lineNumber: "var(--color-extended-gray-600)",
+  lineNumberActive: "var(--color-extended-gray-500)",
   gutterBackground: "var(--editor-surface-0)",
-  matchingBracketBg: "rgba(101, 215, 157, 0.2)", // green-400
-  matchingBracketOutline: "rgb(101, 215, 157)", // green-400
+  matchingBracketBg: "color-mix(in srgb, var(--color-green-400) 20%, transparent)",
+  matchingBracketOutline: "var(--color-green-400)",
 
-  keyword: "rgb(112, 160, 255)", // blue-500
-  string: "rgb(101, 215, 157)", // green-400
-  number: "rgb(197, 156, 249)", // purple-500
-  comment: "rgb(106, 111, 129)", // gray-600
-  function: "rgb(255, 155, 192)", // carmine-400
-  variable: "rgb(230, 231, 234)", // gray-300
-  type: "rgb(143, 180, 255)", // blue-400
-  operator: "rgb(255, 155, 192)", // carmine-400
-  punctuation: "rgb(213, 215, 221)", // gray-400
-  bool: "rgb(197, 156, 249)", // purple-500
-  builtin: "rgb(197, 156, 249)", // purple-500
+  keyword: "var(--color-blue-500)",
+  string: "var(--color-green-400)",
+  number: "var(--color-purple-500)",
+  comment: "var(--color-extended-gray-600)",
+  function: "var(--color-carmine-400)",
+  variable: "var(--color-extended-gray-300)",
+  type: "var(--color-blue-400)",
+  operator: "var(--color-carmine-400)",
+  punctuation: "var(--color-extended-gray-400)",
+  bool: "var(--color-purple-500)",
+  builtin: "var(--color-purple-500)",
 
-  error: "rgb(231, 87, 80)", // red-700
-  errorBg: "rgba(231, 87, 80, 0.15)",
-  warning: "rgb(242, 186, 42)", // yellow-400
-  warningBg: "rgba(242, 186, 42, 0.15)",
-  info: "rgb(112, 160, 255)", // blue-500
-  infoBg: "rgba(112, 160, 255, 0.15)",
+  error: "var(--color-red-700)",
+  errorBg: "color-mix(in srgb, var(--color-red-700) 15%, transparent)",
+  warning: "var(--color-yellow-400)",
+  warningBg: "color-mix(in srgb, var(--color-yellow-400) 15%, transparent)",
+  info: "var(--color-blue-500)",
+  infoBg: "color-mix(in srgb, var(--color-blue-500) 15%, transparent)",
 };
 
 const lightColors: ThemeColors = {
   background: "var(--editor-surface-0)",
-  foreground: "rgb(39, 41, 48)", // gray-900
-  selection: "rgba(0, 45, 214, 0.15)", // blue-1000
+  foreground: "var(--color-extended-gray-900)",
+  selection: "color-mix(in srgb, var(--color-blue-1000) 15%, transparent)",
   activeLine: "var(--editor-surface-100)",
-  cursor: "rgb(0, 45, 214)", // blue-1000
-  lineNumber: "rgb(106, 111, 129)", // gray-600
-  lineNumberActive: "rgb(39, 41, 48)", // gray-900
+  cursor: "var(--color-blue-1000)",
+  lineNumber: "var(--color-extended-gray-600)",
+  lineNumberActive: "var(--color-extended-gray-900)",
   gutterBackground: "var(--editor-surface-0)",
-  matchingBracketBg: "rgba(2, 114, 64, 0.15)", // green-900
-  matchingBracketOutline: "rgb(2, 114, 64)", // green-900
+  matchingBracketBg: "color-mix(in srgb, var(--color-green-900) 15%, transparent)",
+  matchingBracketOutline: "var(--color-green-900)",
 
-  keyword: "rgb(0, 45, 214)", // blue-1000
-  string: "rgb(2, 114, 64)", // green-900
-  number: "rgb(108, 33, 198)", // purple-1000
-  comment: "rgb(106, 111, 129)", // gray-600
-  function: "rgb(190, 26, 97)", // carmine-900
-  variable: "rgb(39, 41, 48)", // gray-900
-  type: "rgb(0, 53, 245)", // blue-900
-  operator: "rgb(190, 26, 97)", // carmine-900
-  punctuation: "rgb(53, 55, 65)", // gray-800
-  bool: "rgb(108, 33, 198)", // purple-1000
-  builtin: "rgb(108, 33, 198)", // purple-1000
+  keyword: "var(--color-blue-1000)",
+  string: "var(--color-green-900)",
+  number: "var(--color-purple-1000)",
+  comment: "var(--color-extended-gray-600)",
+  function: "var(--color-carmine-900)",
+  variable: "var(--color-extended-gray-900)",
+  type: "var(--color-blue-900)",
+  operator: "var(--color-carmine-900)",
+  punctuation: "var(--color-extended-gray-800)",
+  bool: "var(--color-purple-1000)",
+  builtin: "var(--color-purple-1000)",
 
-  error: "rgb(197, 18, 10)", // red-900
-  errorBg: "rgba(197, 18, 10, 0.08)",
-  warning: "rgb(151, 108, 0)", // yellow-800
-  warningBg: "rgba(151, 108, 0, 0.08)",
-  info: "rgb(0, 45, 214)", // blue-1000
-  infoBg: "rgba(0, 45, 214, 0.08)",
+  error: "var(--color-red-900)",
+  errorBg: "color-mix(in srgb, var(--color-red-900) 8%, transparent)",
+  warning: "var(--color-yellow-800)",
+  warningBg: "color-mix(in srgb, var(--color-yellow-800) 8%, transparent)",
+  info: "var(--color-blue-1000)",
+  infoBg: "color-mix(in srgb, var(--color-blue-1000) 8%, transparent)",
 };
 
 // ============================================================================

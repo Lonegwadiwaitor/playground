@@ -186,6 +186,27 @@
   
   --color-warning-400: oklch(0.8 0.15 85);
   --color-warning-500: oklch(0.7 0.17 85);
+  
+  /* Syntax highlighting palette */
+  --color-blue-400: rgb(143, 180, 255);
+  --color-blue-500: rgb(112, 160, 255);
+  --color-blue-900: rgb(0, 53, 245);
+  --color-blue-1000: rgb(0, 45, 214);
+  
+  --color-green-400: rgb(101, 215, 157);
+  --color-green-900: rgb(2, 114, 64);
+  
+  --color-purple-500: rgb(197, 156, 249);
+  --color-purple-1000: rgb(108, 33, 198);
+  
+  --color-carmine-400: rgb(255, 155, 192);
+  --color-carmine-900: rgb(190, 26, 97);
+  
+  --color-red-700: rgb(231, 87, 80);
+  --color-red-900: rgb(197, 18, 10);
+  
+  --color-yellow-400: rgb(242, 186, 42);
+  --color-yellow-800: rgb(151, 108, 0);
 }
 
 * {
