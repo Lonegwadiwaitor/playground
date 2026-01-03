@@ -120,6 +120,7 @@
             : 'text-(--text-secondary) hover:bg-(--bg-tertiary) border-transparent -mb-px'}"
         role="button"
         tabindex="0"
+        aria-label="Switch to {fileName}"
         onclick={() => editingFileName !== fileName && setActiveFile(fileName)}
         onkeydown={(e) => e.key === 'Enter' && editingFileName !== fileName && setActiveFile(fileName)}
         ondblclick={(e) => !$isEmbed && handleTabDblClick(fileName, e)}
@@ -167,6 +168,7 @@
             : 'text-(--text-secondary) hover:bg-(--bg-tertiary) border-transparent -mb-px'}"
         role="button"
         tabindex="0"
+        aria-label="Add new file"
         onclick={(e) => { e.stopPropagation(); startCreatingFile(); }}
         onkeydown={(e) => { if (e.key === 'Enter' && !isCreatingFile) startCreatingFile(); }}
       >
@@ -198,7 +200,7 @@
   <div class="flex items-center gap-0.5 sm:gap-1 shrink-0 mb-1">
     {#if !$isEmbed}
       <ConfigPopover />
-      <Button size="sm" variant="ghost" onclick={toggleTheme} class="w-8 sm:w-9 px-0">
+      <Button size="sm" variant="ghost" onclick={toggleTheme} class="w-8 sm:w-9 px-0" title="Toggle theme">
         <Icon name={getThemeIcon($themeMode)} size={16} />
       </Button>
       <Button 
@@ -206,11 +208,12 @@
         variant={$showBytecode ? 'default' : 'secondary'} 
         onclick={toggleBytecode} 
         class="px-2 sm:px-3"
+        title="Toggle bytecode view"
       >
         <span class="hidden sm:inline">Bytecode</span>
         <span class="sm:hidden"><Icon name="binary" size={16} /></span>
       </Button>
-      <Button size="sm" variant="secondary" onclick={handleShare} class="px-2 sm:px-3 sm:min-w-14">
+      <Button size="sm" variant="secondary" onclick={handleShare} class="px-2 sm:px-3 sm:min-w-14" title="Share playground">
         {#if shareSuccess === true}
           <Icon name="check" size={16} />
         {:else if shareSuccess === false}
@@ -221,16 +224,16 @@
         {/if}
       </Button>
     {/if}
-    <Button size="sm" variant="secondary" onclick={handleCheck} class="px-2 sm:px-3">
+    <Button size="sm" variant="secondary" onclick={handleCheck} class="px-2 sm:px-3" title="Check code for errors">
       <span class="hidden sm:inline">Check</span>
       <span class="sm:hidden"><Icon name="check"size={16} /></span>
     </Button>
-    <Button size="sm" onclick={handleRun} class="px-2 sm:px-3">
+    <Button size="sm" onclick={handleRun} class="px-2 sm:px-3" title="Run code">
       <span class="sm:mr-1"><Icon name="play"size={16} /></span>
       <span class="hidden sm:inline">Run</span>
     </Button>
     {#if $isEmbed}
-      <Button size="sm" variant="secondary" onclick={handleOpenInPlayground} class="px-2 sm:px-3">
+      <Button size="sm" variant="secondary" onclick={handleOpenInPlayground} class="px-2 sm:px-3" title="Open in playground">
         <span class="hidden sm:inline items-center gap-1">Open</span>
         <span class="sm:hidden"><Icon name="external"size={16} /></span>
       </Button>

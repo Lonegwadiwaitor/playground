@@ -73,6 +73,8 @@
     <button 
       class="flex items-center gap-2 text-sm font-medium text-(--text-secondary) hover:text-(--text-primary) transition-colors"
       onclick={() => isExpanded = !isExpanded}
+      aria-label={isExpanded ? 'Collapse output panel' : 'Expand output panel'}
+      aria-expanded={isExpanded}
     >
       <span 
         class="transition-transform duration-200" 
@@ -97,7 +99,7 @@
     <!-- Always render button container to prevent layout shift, but hide when not needed -->
     <div class="-my-1">
       {#if isExpanded && $output.length > 0}
-        <Button size="sm" variant="ghost" onclick={clearOutput} class="h-7 px-2">
+        <Button size="sm" variant="ghost" onclick={clearOutput} class="h-7 px-2" title="Clear output">
           Clear
         </Button>
       {/if}

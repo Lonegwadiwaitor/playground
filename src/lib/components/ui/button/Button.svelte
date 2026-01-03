@@ -33,6 +33,7 @@
     size?: Size;
     disabled?: boolean;
     type?: 'button' | 'submit' | 'reset';
+    title?: string;
     onclick?: (e: MouseEvent) => void;
     children?: import('svelte').Snippet;
   }
@@ -43,6 +44,7 @@
     size = 'default',
     disabled = false,
     type = 'button',
+    title,
     onclick,
     children,
     ...restProps
@@ -53,6 +55,7 @@
   class={cn(buttonVariants({ variant, size }), className)}
   {disabled}
   {type}
+  {title}
   {onclick}
   {...restProps}
 >

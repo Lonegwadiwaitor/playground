@@ -64,7 +64,7 @@
 <Popover.Root bind:open>
   <Popover.Trigger>
     {#snippet child({ props })}
-      <Button {...props} size="sm" variant="ghost" class="w-8 sm:w-9 px-0">
+      <Button {...props} size="sm" variant="ghost" class="w-8 sm:w-9 px-0" title="Settings">
         <Icon name="gear" size={16} />
       </Button>
     {/snippet}
@@ -119,6 +119,7 @@
                     {isSelected 
                       ? 'bg-(--bg-tertiary) border-(--accent) text-(--text-primary)' 
                       : 'hover:bg-(--bg-tertiary) border-transparent text-(--text-secondary)'}"
+                  title="{option.label} type solver"
                   onclick={() => handleSolverChange(option.value)}
                 >
                   {option.label}
