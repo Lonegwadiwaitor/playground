@@ -311,6 +311,18 @@
       default: return 'Bytecode';
     }
   }
+
+  function scrollHighlighted(element: HTMLElement, highlighted: boolean) {
+    function update(highlighted: boolean) {
+      if (highlighted) {
+        element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }
+
+    update(highlighted);
+
+    return { update };
+  }
 </script>
 
 {#if $showBytecode}
@@ -342,6 +354,7 @@
               class="line" 
               class:highlighted={line.sourceLine === $cursorLine}
               class:empty={line.type === 'empty'}
+              use:scrollHighlighted={line.sourceLine === $cursorLine}
             >
               {@html highlightLine(line.raw, line.type)}
             </div>
