@@ -312,17 +312,17 @@
     }
   }
 
-  function scrollHighlighted(element: HTMLElement, highlighted: boolean) {
-    function update(highlighted: boolean) {
-      if (highlighted) {
-        element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      }
+  let bytecodeContainer: HTMLElement | undefined = $state();
+
+  // Scroll the first highlighted line into view when cursorLine changes
+  $effect(() => {
+    const line = $cursorLine;
+    if (line == null || !bytecodeContainer) return;
+    const el = bytecodeContainer.querySelector('.line.highlighted');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
     }
-
-    update(highlighted);
-
-    return { update };
-  }
+  });
 </script>
 
 {#if $showBytecode}
@@ -341,7 +341,7 @@
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-auto font-mono text-xs leading-relaxed min-h-0 bytecode-view">
+    <div class="flex-1 overflow-auto font-mono text-xs leading-relaxed min-h-0 bytecode-view" bind:this={bytecodeContainer}>
       {#if error}
         <div class="text-error-500 p-3">
           <div class="font-semibold mb-1">Compilation Error:</div>
@@ -354,7 +354,6 @@
               class="line" 
               class:highlighted={line.sourceLine === $cursorLine}
               class:empty={line.type === 'empty'}
-              use:scrollHighlighted={line.sourceLine === $cursorLine}
             >
               {@html highlightLine(line.raw, line.type)}
             </div>
